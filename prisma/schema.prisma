@@ -19,7 +19,7 @@ model Users {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   userInfos     UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1 관계를 맺습니다.
-  resumes       Resumes[] // 사용자(Users) 테이블과 게시글(Resumes) 테이블이 1:N 관계를 맺습니다.
+  resumes       Resumes[] // 사용자(Users) 테이블과 이력서(Resumes) 테이블이 1:N 관계를 맺습니다.
   comments      Comments[] // 사용자(Users) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
   userHistories UserHistories[] // 사용자(Users) 테이블과 사용자 히스토리(UserHistories) 테이블이 1:N 관계를 맺습니다.
 
@@ -40,7 +40,7 @@ model Resumes {
 
   // Users 테이블과 관계를 설정합니다.
   user      Users      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  comments  Comments[] // 게시글(Resumes) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
+  comments  Comments[] // 이력서(Resumes) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
   userInfos UserInfos  @relation(fields: [userInfoId], references: [userInfoId]) // TODO: onUpdate 시도
 
   @@map("Resumes")
@@ -65,9 +65,9 @@ model UserInfos {
 
 model Comments {
   commentId Int      @id @default(autoincrement()) @map("commentId")
-  resumeId  Int      @map("resumeId") // 게시글(Resumes) 테이블을 참조하는 외래키
+  resumeId  Int      @map("resumeId") // 이력서(Resumes) 테이블을 참조하는 외래키
   userId    Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
-  content   String   @map("content")
+  content   String   @map("content") @db.Text
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
