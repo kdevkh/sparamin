@@ -26,7 +26,7 @@ router.post("/sign-up", async (req, res, next) => {
     const [user, userInfo] = await prisma.$transaction(
       async (tx) => {
         const user = await tx.users.create({
-          data: { email, password: hashedPassword },
+          data: { email, password: hashedPassword, role: "user" },
         });
         // UserInfos 테이블에 사용자 정보를 추가합니다.
         const userInfo = await tx.userInfos.create({
@@ -53,8 +53,8 @@ router.post("/sign-up", async (req, res, next) => {
 });
 
 /** 로그인 API **/
-const ACCESS_TOKEN_SECRET_KEY = `sparamin`;
-const REFRESH_TOKEN_SECRET_KEY = `refreshtoken`;
+const ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET_KEY;
+const REFRESH_TOKEN_SECRET_KEY = process.env.REFRESH_TOKEN_SECRET_KEY;
 
 const tokenStorage = {}; // Refresh Token을 저장할 객체
 
@@ -72,18 +72,18 @@ router.post("/sign-in", async (req, res, next) => {
   const accessToken = jwt.sign(
     { userId: user.userId },
     ACCESS_TOKEN_SECRET_KEY,
-    { expiresIn: "5s" },
+    { expiresIn: "3h" },
   );
 
   const refreshToken = jwt.sign(
     { userId: user.userId },
     REFRESH_TOKEN_SECRET_KEY,
-    { expiresIn: "10s" },
+    { expiresIn: "7d" },
   );
 
   // Refresh Token을 가지고 해당 유저의 정보를 서버에 저장합니다.
   tokenStorage[refreshToken] = {
-    id: email,
+    id: user.userId,
     ip: req.ip,
     userAgent: req.headers["user-agent"],
   };
@@ -101,7 +101,7 @@ router.post("/token/refresh", refreshMiddleware, async (req, res, next) => {
 
   // 새로운 Access Token을 생성합니다.
   const newAccessToken = jwt.sign({ userId }, ACCESS_TOKEN_SECRET_KEY, {
-    expiresIn: "5s",
+    expiresIn: "3h",
   });
 
   // 새로운 Access Token을 클라이언트에게 전달합니다.

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "../models/index.js"; // Prisma client 가져오기
 
-const ACCESS_TOKEN_SECRET_KEY = `sparamin`;
+const ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET_KEY;
 
 export default async function (req, res, next) {
   try {

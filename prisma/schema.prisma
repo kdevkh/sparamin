@@ -14,33 +14,34 @@ model Users {
   userId    Int      @id @default(autoincrement()) @map("userId")
   email     String   @unique @map("email")
   password  String   @map("password")
+  role      String   @default("user") @map("role") // HR구분용
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  userInfos UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1 관계를 맺습니다.
-  resumes   Resumes[] // 사용자(Users) 테이블과 게시글(Resumes) 테이블이 1:N 관계를 맺습니다.
-  comments  Comments[] // 사용자(Users) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
+  userInfos     UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1 관계를 맺습니다.
+  resumes       Resumes[] // 사용자(Users) 테이블과 게시글(Resumes) 테이블이 1:N 관계를 맺습니다.
+  comments      Comments[] // 사용자(Users) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
   userHistories UserHistories[] // 사용자(Users) 테이블과 사용자 히스토리(UserHistories) 테이블이 1:N 관계를 맺습니다.
 
   @@map("Users")
 }
 
 model Resumes {
-  resumeId  Int      @id @default(autoincrement()) @map("resumeId")
-  userId    Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
-  userInfoId Int     @map("userInfoId") // UserInfos 테이블 참조 외래키
-  status    String   @map("status")
-  title     String   @map("title")
-  intro     String   @map("intro") @db.Text
-  exp       String?  @map("exp") @db.Text
-  skill     String?  @map("skill") @db.Text
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
+  resumeId   Int      @id @default(autoincrement()) @map("resumeId")
+  userId     Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
+  userInfoId Int      @map("userInfoId") // UserInfos 테이블 참조 외래키
+  status     String   @default("APPLY") @map("status")
+  title      String   @map("title")
+  intro      String   @map("intro") @db.Text
+  exp        String?  @map("exp") @db.Text
+  skill      String?  @map("skill") @db.Text
+  createdAt  DateTime @default(now()) @map("createdAt")
+  updatedAt  DateTime @updatedAt @map("updatedAt")
 
   // Users 테이블과 관계를 설정합니다.
-  user     Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  comments Comments[] // 게시글(Resumes) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
-  userInfos UserInfos @relation(fields: [userInfoId], references: [userInfoId]) // TODO: onUpdate 시도
+  user      Users      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  comments  Comments[] // 게시글(Resumes) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
+  userInfos UserInfos  @relation(fields: [userInfoId], references: [userInfoId]) // TODO: onUpdate 시도
 
   @@map("Resumes")
 }
@@ -56,7 +57,7 @@ model UserInfos {
   updatedAt    DateTime @updatedAt @map("updatedAt")
 
   // Users 테이블과 관계를 설정합니다.
-  user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user    Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
   resumes Resumes[] // Resumes 테이블과 1:N 관계 맺기
 
   @@map("UserInfos")
@@ -71,9 +72,9 @@ model Comments {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   // Resumes 테이블과 관계를 설정합니다.
-  resumes   Resumes  @relation(fields: [resumeId], references: [resumeId], onDelete: Cascade)
+  resumes Resumes @relation(fields: [resumeId], references: [resumeId], onDelete: Cascade)
   // Users 테이블과 관계를 설정합니다.
-  user      Users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  user    Users   @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@map("Comments")
 }
