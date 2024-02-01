@@ -16,6 +16,12 @@ router.post("/sign-up", async (req, res, next) => {
       where: { email },
     });
 
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "비밀번호는 최소 6자리 이상이어야 합니다." });
+    }
+
     if (isExistUser) {
       return res.status(409).json({ message: "이미 존재하는 이메일입니다." });
     }
