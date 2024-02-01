@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { Prisma } from "@prisma/client";
+import refreshMiddleware from "../middlewares/refresh.middleware.js";
 
 const router = express.Router();
 
@@ -52,6 +53,11 @@ router.post("/sign-up", async (req, res, next) => {
 });
 
 /** 로그인 API **/
+const ACCESS_TOKEN_SECRET_KEY = `sparamin`;
+const REFRESH_TOKEN_SECRET_KEY = `refreshtoken`;
+
+const tokenStorage = {}; // Refresh Token을 저장할 객체
+
 router.post("/sign-in", async (req, res, next) => {
   const { email, password } = req.body;
   const user = await prisma.users.findFirst({ where: { email } });
@@ -63,12 +69,45 @@ router.post("/sign-in", async (req, res, next) => {
     return res.status(401).json({ message: "비밀번호가 일치하지 않습니다." });
 
   // 로그인에 성공하면, 사용자의 userId를 바탕으로 토큰을 생성합니다.
-  const token = jwt.sign({ userId: user.userId }, "custom-secret-key");
+  const accessToken = jwt.sign(
+    { userId: user.userId },
+    ACCESS_TOKEN_SECRET_KEY,
+    { expiresIn: "5s" },
+  );
+
+  const refreshToken = jwt.sign(
+    { userId: user.userId },
+    REFRESH_TOKEN_SECRET_KEY,
+    { expiresIn: "10s" },
+  );
+
+  // Refresh Token을 가지고 해당 유저의 정보를 서버에 저장합니다.
+  tokenStorage[refreshToken] = {
+    id: email,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  };
 
   // authotization key값을 가진 쿠키에 Bearer 토큰 형식으로 JWT를 저장합니다.
-  res.cookie("authorization", `Bearer ${token}`);
+  res.cookie("authorization", `Bearer ${accessToken}`);
+  res.cookie("refreshToken", `Bearer ${refreshToken}`);
 
   return res.status(200).json({ message: "로그인 성공" });
+});
+
+/** Refresh Token으로 Access Token 재발급 **/
+router.post("/token/refresh", refreshMiddleware, async (req, res, next) => {
+  const { userId } = req.refreshTokenInfo;
+
+  // 새로운 Access Token을 생성합니다.
+  const newAccessToken = jwt.sign({ userId }, ACCESS_TOKEN_SECRET_KEY, {
+    expiresIn: "5s",
+  });
+
+  // 새로운 Access Token을 클라이언트에게 전달합니다.
+  res.cookie("authorization", `Bearer ${newAccessToken}`);
+
+  return res.status(200).json({ message: "새로운 Access Token 발급 성공" });
 });
 
 /** 사용자 조회 API **/

@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 import { prisma } from "../models/index.js"; // Prisma client 가져오기
 
+const ACCESS_TOKEN_SECRET_KEY = `sparamin`;
+
 export default async function (req, res, next) {
   try {
     const { authorization } = req.cookies;
@@ -11,8 +13,8 @@ export default async function (req, res, next) {
     if (tokenType !== "Bearer")
       throw new Error("토큰 타입이 일치하지 않습니다.");
 
-    const decodedToken = jwt.verify(token, "custom-secret-key");
-    const userId = decodedToken.userId;
+    const decodedAccessToken = jwt.verify(token, ACCESS_TOKEN_SECRET_KEY);
+    const userId = decodedAccessToken.userId;
 
     const user = await prisma.users.findFirst({
       where: { userId: +userId },
