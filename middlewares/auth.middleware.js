@@ -9,6 +9,10 @@ export default async function (req, res, next) {
     if (!authorization) throw new Error("토큰이 존재하지 않습니다.");
 
     const [tokenType, token] = authorization.split(" ");
+    // 원래 같았으면 아래,,, 리팩토링한 게 위에
+    // const token = authorization.split(" ");
+    // const tokenType = token[0];
+    // const tokenValue = token[1];
 
     if (tokenType !== "Bearer")
       throw new Error("토큰 타입이 일치하지 않습니다.");

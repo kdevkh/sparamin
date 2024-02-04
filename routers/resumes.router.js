@@ -40,6 +40,17 @@ router.post("/resumes", authMiddleware, async (req, res, next) => {
 
 /** 이력서 목록 조회 API **/
 router.get("/resumes", async (req, res, next) => {
+  const orderKey = req.query.orderKey ?? "resumeId";
+  const orderValue = req.query.orderValue ?? "desc";
+
+  if (!["resumeId", "status"].includes(orderKey)) {
+    return res.status(400).json({ message: "orderKey가 올바르지 않습니다." });
+  }
+
+  if (!["asc", "desc"].includes(orderValue.toLowerCase())) {
+    return res.status(400).json({ message: "orderValue가 올바르지 않습니다." });
+  }
+
   const resumes = await prisma.resumes.findMany({
     select: {
       resumeId: true,
@@ -56,9 +67,11 @@ router.get("/resumes", async (req, res, next) => {
       createdAt: true,
       updatedAt: true,
     },
-    orderBy: {
-      createdAt: "desc", // 이력서를 최신순으로 정렬합니다.
-    },
+    orderBy: [
+      {
+        [orderKey]: orderValue.toLowerCase(), // []로 orderKey를 감싸줘야 resumeId나 status 중 하나가 들어와도 작동 가능 --- 변수를 통해 변수 안의 값이 들어가게 되는 것
+      },
+    ],
   });
 
   return res.status(200).json({ data: resumes });
@@ -69,7 +82,7 @@ router.get("/resumes/:resumeId", async (req, res, next) => {
   const { resumeId } = req.params;
   const resume = await prisma.resumes.findFirst({
     where: {
-      resumeId: +resumeId,
+      resumeId: +resumeId, // Number(resumeId)로도 쓸 수 있음
     },
     select: {
       resumeId: true,
@@ -111,6 +124,21 @@ router.patch("/resumes/:resumeId", authMiddleware, async (req, res, next) => {
 
   if (!resume) {
     return res.status(404).json({ error: "이력서를 찾을 수 없습니다." });
+  }
+
+  if (
+    ![
+      "APPLY",
+      "DROP",
+      "PASS",
+      "INTERVIEW1",
+      "INTERVIEW2",
+      "FINAL_PASS",
+    ].includes(status)
+  ) {
+    return res.status(400).json({
+      message: "올바른 상태값이 아닙니다.",
+    });
   }
 
   const updatedResume = await prisma.resumes.update({

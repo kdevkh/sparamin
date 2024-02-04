@@ -11,7 +11,15 @@ const router = express.Router();
 /** 사용자 회원가입 API **/
 router.post("/sign-up", async (req, res, next) => {
   try {
-    const { email, password, name, age, gender, profileImage } = req.body;
+    const {
+      email,
+      password,
+      passwordConfirm,
+      name,
+      age,
+      gender,
+      profileImage,
+    } = req.body;
     const isExistUser = await prisma.users.findFirst({
       where: { email },
     });
@@ -20,6 +28,10 @@ router.post("/sign-up", async (req, res, next) => {
       return res
         .status(400)
         .json({ message: "비밀번호는 최소 6자리 이상이어야 합니다." });
+    }
+
+    if (password !== passwordConfirm) {
+      return res.status(400).json({ message: "비밀번호가 다릅니다." });
     }
 
     if (isExistUser) {
