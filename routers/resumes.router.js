@@ -112,13 +112,12 @@ router.get("/resumes/:resumeId", async (req, res, next) => {
 /** 이력서 수정 API **/
 router.patch("/resumes/:resumeId", authMiddleware, async (req, res, next) => {
   const { resumeId } = req.params;
-  const { userId } = req.user;
+  const { userId, role } = req.user;
   const { status, title, intro, exp, skill } = req.body;
 
   const resume = await prisma.resumes.findFirst({
     where: {
       resumeId: +resumeId,
-      userId: +userId,
     },
   });
 
@@ -126,32 +125,48 @@ router.patch("/resumes/:resumeId", authMiddleware, async (req, res, next) => {
     return res.status(404).json({ error: "이력서를 찾을 수 없습니다." });
   }
 
-  if (
-    ![
-      "APPLY",
-      "DROP",
-      "PASS",
-      "INTERVIEW1",
-      "INTERVIEW2",
-      "FINAL_PASS",
-    ].includes(status)
-  ) {
+  // 권한 부여
+  if (!req.isAdmin && resume.userId !== +userId) {
+    return res.status(400).json({ message: "권한이 없습니다~~~" });
+  }
+
+  const allowedStatusValues = [
+    "APPLY",
+    "DROP",
+    "PASS",
+    "INTERVIEW1",
+    "INTERVIEW2",
+    "FINAL_PASS",
+  ];
+
+  if (status && !allowedStatusValues.includes(status)) {
     return res.status(400).json({
       message: "올바른 상태값이 아닙니다.",
     });
   }
 
+  // admin 타 필드 수정 불가
+  if (req.isAdmin) {
+    const nonStatusFields = Object.keys(req.body).filter(
+      (field) => field !== "status",
+    );
+
+    if (nonStatusFields.length > 0) {
+      return res.status(400).json({
+        message: "admin은 status 이외의 필드를 수정할 수 없습니다.",
+      });
+    }
+  }
+
+  const updateData = req.isAdmin
+    ? { status }
+    : { status, title, intro, exp, skill };
+
   const updatedResume = await prisma.resumes.update({
     where: {
       resumeId: +resumeId,
     },
-    data: {
-      status,
-      title,
-      intro,
-      exp,
-      skill,
-    },
+    data: updateData,
   });
 
   return res.status(200).json({ data: updatedResume });

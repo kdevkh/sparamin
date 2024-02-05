@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,84 +8,80 @@ datasource db {
 }
 
 model Users {
-  userId    Int      @id @default(autoincrement()) @map("userId")
-  email     String   @unique @map("email")
-  password  String   @map("password")
-  role      String   @default("user") @map("role") // HR구분용
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
-
-  userInfos     UserInfos? // 사용자(Users) 테이블과 사용자 정보(UserInfos) 테이블이 1:1 관계를 맺습니다.
-  resumes       Resumes[] // 사용자(Users) 테이블과 이력서(Resumes) 테이블이 1:N 관계를 맺습니다.
-  comments      Comments[] // 사용자(Users) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
-  userHistories UserHistories[] // 사용자(Users) 테이블과 사용자 히스토리(UserHistories) 테이블이 1:N 관계를 맺습니다.
+  userId        Int             @id @default(autoincrement()) @map("userId")
+  clientId      String?         @unique @map("clientId")
+  email         String?         @unique @map("email")
+  password      String?         @map("password")
+  createdAt     DateTime        @default(now()) @map("createdAt")
+  updatedAt     DateTime        @updatedAt @map("updatedAt")
+  role          String          @default("user") @map("role")
+  comments      Comments[]
+  resumes       Resumes[]
+  userHistories UserHistories[]
+  userInfos     UserInfos?
 
   @@map("Users")
 }
 
 model Resumes {
-  resumeId   Int      @id @default(autoincrement()) @map("resumeId")
-  userId     Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
-  userInfoId Int      @map("userInfoId") // UserInfos 테이블 참조 외래키
-  status     String   @default("APPLY") @map("status")
-  title      String   @map("title")
-  intro      String   @map("intro") @db.Text
-  exp        String?  @map("exp") @db.Text
-  skill      String?  @map("skill") @db.Text
-  createdAt  DateTime @default(now()) @map("createdAt")
-  updatedAt  DateTime @updatedAt @map("updatedAt")
+  resumeId   Int        @id @default(autoincrement()) @map("resumeId")
+  userId     Int        @map("userId")
+  userInfoId Int        @map("userInfoId")
+  status     String     @default("APPLY") @map("status")
+  title      String     @map("title")
+  intro      String     @map("intro") @db.Text
+  exp        String?    @map("exp") @db.Text
+  skill      String?    @map("skill") @db.Text
+  createdAt  DateTime   @default(now()) @map("createdAt")
+  updatedAt  DateTime   @updatedAt @map("updatedAt")
+  comments   Comments[]
+  user       Users      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  userInfos  UserInfos  @relation(fields: [userInfoId], references: [userInfoId])
 
-  // Users 테이블과 관계를 설정합니다.
-  user      Users      @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  comments  Comments[] // 이력서(Resumes) 테이블과 댓글(Comments) 테이블이 1:N 관계를 맺습니다.
-  userInfos UserInfos  @relation(fields: [userInfoId], references: [userInfoId]) // TODO: onUpdate 시도
-
+  @@index([userId], map: "Resumes_userId_fkey")
+  @@index([userInfoId], map: "Resumes_userInfoId_fkey")
   @@map("Resumes")
 }
 
 model UserInfos {
-  userInfoId   Int      @id @default(autoincrement()) @map("userInfoId")
-  userId       Int      @unique @map("userId") // 사용자(Users) 테이블 참조 외래키
-  name         String   @map("name")
-  age          Int      @map("age")
-  gender       String   @map("gender")
-  profileImage String?  @map("profileImage")
-  createdAt    DateTime @default(now()) @map("createdAt")
-  updatedAt    DateTime @updatedAt @map("updatedAt")
-
-  // Users 테이블과 관계를 설정합니다.
-  user    Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
-  resumes Resumes[] // Resumes 테이블과 1:N 관계 맺기
+  userInfoId   Int       @id @default(autoincrement()) @map("userInfoId")
+  userId       Int       @unique @map("userId")
+  name         String    @map("name")
+  age          Int?      @map("age")
+  gender       String?   @map("gender")
+  profileImage String?   @map("profileImage")
+  createdAt    DateTime  @default(now()) @map("createdAt")
+  updatedAt    DateTime  @updatedAt @map("updatedAt")
+  resumes      Resumes[]
+  user         Users     @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   @@map("UserInfos")
 }
 
 model Comments {
   commentId Int      @id @default(autoincrement()) @map("commentId")
-  resumeId  Int      @map("resumeId") // 이력서(Resumes) 테이블을 참조하는 외래키
-  userId    Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
+  resumeId  Int      @map("resumeId")
+  userId    Int      @map("userId")
   content   String   @map("content") @db.Text
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
+  resumes   Resumes  @relation(fields: [resumeId], references: [resumeId], onDelete: Cascade)
+  user      Users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  // Resumes 테이블과 관계를 설정합니다.
-  resumes Resumes @relation(fields: [resumeId], references: [resumeId], onDelete: Cascade)
-  // Users 테이블과 관계를 설정합니다.
-  user    Users   @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
+  @@index([resumeId], map: "Comments_resumeId_fkey")
+  @@index([userId], map: "Comments_userId_fkey")
   @@map("Comments")
 }
 
 model UserHistories {
   userHistoryId String   @id @default(uuid()) @map("userHistoryId")
-  userId        Int      @map("userId") // 사용자(Users) 테이블을 참조하는 외래키
-  changedField  String   @map("changedField") // 변경된 필드명
-  oldValue      String?  @map("oldValue") // 변경 전 값
-  newValue      String   @map("newValue") // 변경 후 값
+  userId        Int      @map("userId")
+  changedField  String   @map("changedField")
+  oldValue      String?  @map("oldValue")
+  newValue      String   @map("newValue")
   changedAt     DateTime @default(now()) @map("changedAt")
+  user          Users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  // Users 테이블과 관계를 설정합니다.
-  user Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
+  @@index([userId], map: "UserHistories_userId_fkey")
   @@map("UserHistories")
 }
