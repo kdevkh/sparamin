@@ -178,7 +178,6 @@ router.post("/sign-in", async (req, res, next) => {
     ACCESS_TOKEN_SECRET_KEY,
     { expiresIn: "12h" },
   );
-  console.log(accessToken);
 
   const refreshToken = jwt.sign(
     { userId: user.userId },
